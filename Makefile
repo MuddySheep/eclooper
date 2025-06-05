@@ -2,6 +2,7 @@
 
 CC = cc
 CC_FLAGS ?= -O3 -ffast-math -Wall -Wextra
+CUDA_HOME ?= /usr/local/cuda
 
 ifeq ($(shell uname -m),x86_64)
 	CC_FLAGS += -march=native -pthread -lpthread
@@ -12,7 +13,7 @@ default: build
 clean:
 	@rm -rf ecloop bench main a.out *.profraw *.profdata
 
-NVCC ?= nvcc
+NVCC ?= $(CUDA_HOME)/bin/nvcc
 
 build: clean $(if $(CUDA),ecc_cuda.o)
 ifeq ($(CUDA),1)

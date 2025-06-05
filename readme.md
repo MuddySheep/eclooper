@@ -21,6 +21,9 @@ A high-performance, CPU-optimized tool for computing public keys on the secp256k
 ```sh
 git clone https://github.com/vladkens/ecloop.git && cd ecloop
 make build
+make build CUDA=1 # build with CUDA support
+# specify CUDA_HOME if nvcc is not in PATH
+# make build CUDA=1 CUDA_HOME=/usr/local/cuda-12.9
 ```
 
 _\* On macOS, you may need to run `xcode-select --install` first._
