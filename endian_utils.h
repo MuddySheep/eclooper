@@ -1,6 +1,13 @@
 #pragma once
 #include <stdint.h>
+#include <assert.h>
 
-static const union { uint32_t i; uint8_t c[4]; } _ecl_endian_test = {1};
-#define IS_LITTLE_ENDIAN (_ecl_endian_test.c[0] == 1)
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
+#define IS_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#else
+#include <endian.h>
+#define IS_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
+#endif
+
+static_assert(IS_LITTLE_ENDIAN, "ecloop requires little-endian");
 

@@ -19,7 +19,7 @@ static_assert(sizeof(pe)==96, "pe size");
 
 #define INLINE __device__ __host__ inline __attribute__((always_inline))
 
-__device__ __constant__ fe d_FE_P;
+__device__ __constant__ fe d_FE_P; // prime modulus loaded at runtime
 
 static const fe FE_P_HOST = {0xfffffffefffffc2fULL, 0xffffffffffffffffULL,
                              0xffffffffffffffffULL, 0xffffffffffffffffULL};
@@ -47,6 +47,11 @@ INLINE void fe_set64(fe r, u64 a) { r[0]=a; r[1]=r[2]=r[3]=0; }
 INLINE int fe_cmp(const fe a, const fe b) {
   for(int i=3;i>=0;--i){ if(a[i]!=b[i]) return a[i]>b[i]?1:-1; }
   return 0;
+}
+
+INLINE void pe_clone(pe *r, const pe *a){
+  // why: ensure struct copy works on host and device
+  for(int i=0;i<4;i++){ r->x[i]=a->x[i]; r->y[i]=a->y[i]; r->z[i]=a->z[i]; }
 }
 
 INLINE void fe_mul_scalar(u64 r[5], const fe a, u64 b){
@@ -163,7 +168,7 @@ __global__ void mul_kernel(pe *r,const pe *p,const fe k,u32 bits){
   fe_set64(r->x,0); fe_set64(r->y,0); fe_set64(r->z,1);
   for(u32 i=0;i<bits;++i){
     if(k[i/64] & (1ULL<<(i%64))){
-      if(r->x[0]==0 && r->y[0]==0) fe_clone(*r,t);
+      if(r->x[0]==0 && r->y[0]==0) pe_clone(r,&t);
       else _ec_jacobi_add1(r,r,&t);
     }
     _ec_jacobi_dbl1(&t,&t);
