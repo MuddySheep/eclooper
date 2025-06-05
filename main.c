@@ -351,6 +351,7 @@ void batch_add(ctx_t *ctx, const fe pk, const size_t iterations) {
 
   pe bp[GROUP_INV_SIZE]; // calculated ec points
   fe dx[hsize];          // delta x for group inversion
+  fe tmp[hsize];         // scratch for inversion
   pe GStart;             // iteration points
   fe ck, rx, ry;         // current start point; tmp for x3, y3
   fe ss, dd;             // temp variables
@@ -367,7 +368,7 @@ void batch_add(ctx_t *ctx, const fe pk, const size_t iterations) {
   size_t counter = 0;
   while (counter < iterations) {
     for (size_t i = 0; i < hsize; ++i) fe_modp_sub(dx[i], ctx->gpoints[i].x, GStart.x);
-    fe_modp_grpinv(dx, hsize);
+    fe_modp_grpinv(dx, hsize, tmp);
 
     pe_clone(&bp[hsize + 0], &GStart); // set K value
 
