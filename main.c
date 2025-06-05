@@ -11,6 +11,9 @@
 #include "lib/bench.c"
 #include "lib/ecc.c"
 #include "lib/utils.c"
+#ifdef WITH_CUDA
+#include "lib/ecc_cuda.h"
+#endif
 
 #define VERSION "0.5.0"
 #define MAX_JOB_SIZE 1024 * 1024 * 2
@@ -32,6 +35,9 @@ typedef struct ctx_t {
   bool check_addr33;
   bool check_addr65;
   bool use_endo;
+#ifdef WITH_CUDA
+  bool use_cuda;
+#endif
 
   FILE *outfile;
   bool quiet;
@@ -223,10 +229,18 @@ void ctx_precompute_gpoints(ctx_t *ctx) {
 
   fe t; // precalc stride point
   fe_modn_add_stride(t, FE_ZERO, ctx->stride_k, GROUP_INV_SIZE);
-  ec_jacobi_mulrdc(&ctx->stride_p, &G1, t); // G * (GROUP_INV_SIZE * gs)
+#ifdef WITH_CUDA
+  if (ctx->use_cuda) ec_jacobi_mulrdc_cuda(&ctx->stride_p, &G1, t);
+  else
+#endif
+    ec_jacobi_mulrdc(&ctx->stride_p, &G1, t); // G * (GROUP_INV_SIZE * gs)
 
   pe g1, g2;
-  ec_jacobi_mulrdc(&g1, &G1, ctx->stride_k);
+#ifdef WITH_CUDA
+  if (ctx->use_cuda) ec_jacobi_mulrdc_cuda(&g1, &G1, ctx->stride_k);
+  else
+#endif
+    ec_jacobi_mulrdc(&g1, &G1, ctx->stride_k);
   ec_jacobi_dblrdc(&g2, &g1);
 
   size_t hsize = GROUP_INV_SIZE / 2;
@@ -358,7 +372,11 @@ void batch_add(ctx_t *ctx, const fe pk, const size_t iterations) {
 
   // set start point to center of the group
   fe_modn_add_stride(ss, pk, ctx->stride_k, hsize);
-  ec_jacobi_mulrdc(&GStart, &G1, ss); // G * (pk + hsize * gs)
+#ifdef WITH_CUDA
+  if (ctx->use_cuda) ec_jacobi_mulrdc_cuda(&GStart, &G1, ss); // G * (pk + hsize * gs)
+  else
+#endif
+    ec_jacobi_mulrdc(&GStart, &G1, ss); // G * (pk + hsize * gs)
 
   // group addition with single inversion (with stride support)
   // structure: K-N/2 .. K-2 K-1 [K] K+1 K+2 .. K+N/2-1 (last K dropped to have odd size)
@@ -764,6 +782,9 @@ void usage(const char *name) {
   printf("  -d <offs:size>  - bit offset and size for search (example: 128:32, default: 0:32)\n");
   printf("  -q              - quiet mode (no output to stdout; -o required)\n");
   printf("  -endo           - use endomorphism (default: false)\n");
+#ifdef WITH_CUDA
+  printf("  -cuda           - use CUDA acceleration (default: false)\n");
+#endif
   printf("\nOther commands:\n");
   printf("  blf-gen         - create bloom filter from list of hex-encoded hash160\n");
   printf("  blf-check       - check bloom filter for given hex-encoded hash160\n");
@@ -829,6 +850,9 @@ void init(ctx_t *ctx, args_t *args) {
 
   ctx->use_endo = args_bool(args, "-endo");
   if (ctx->cmd == CMD_MUL) ctx->use_endo = false; // no endo for mul command
+#ifdef WITH_CUDA
+  ctx->use_cuda = args_bool(args, "-cuda");
+#endif
 
   pthread_mutex_init(&ctx->lock, NULL);
   int cpus = get_cpu_count();
