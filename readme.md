@@ -52,6 +52,7 @@ Compute options:
   -r <range>      - search range in hex format (example: 8000:ffff, default all)
   -q              - quiet mode (no output to stdout; -o required)
   -endo           - use endomorphism (default: false)
+  -cuda           - use CUDA acceleration when built with CUDA
 
 Other commands:
   blf-gen         - create bloom filter from list of hex-encoded hash160

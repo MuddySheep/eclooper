@@ -12,8 +12,17 @@ default: build
 clean:
 	@rm -rf ecloop bench main a.out *.profraw *.profdata
 
-build: clean
+NVCC ?= nvcc
+
+build: clean $(if $(CUDA),ecc_cuda.o)
+ifeq ($(CUDA),1)
+	$(CC) $(CC_FLAGS) -DWITH_CUDA main.c ecc_cuda.o -o ecloop -lcudart
+else
 	$(CC) $(CC_FLAGS) main.c -o ecloop
+endif
+
+ecc_cuda.o: lib/ecc_cuda.cu
+	$(NVCC) -std=c++17 -O3 -c $< -o $@
 
 bench: build
 	./ecloop bench
