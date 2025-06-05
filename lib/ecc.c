@@ -25,6 +25,7 @@ INLINE u64 umul128(const u64 a, const u64 b, u64 *hi) {
 // MARK: Field Element
 typedef u64 fe[4];    // 256bit as 4x64bit (a0 + a1*2^64 + a2*2^128 + a3*2^192)
 typedef u64 fe320[5]; // 320bit as 5x64bit (a0 + a1*2^64 + a2*2^128 + a3*2^192 + a4*2^256)
+static_assert(sizeof(fe) == 32, "fe must be 32 bytes");
 
 GLOBAL fe FE_ZERO = {0, 0, 0, 0};
 
@@ -43,7 +44,9 @@ INLINE void fe_print(const char *label, const fe a) {
 }
 
 INLINE bool fe_iszero(const fe r) { return r[0] == 0 && r[1] == 0 && r[2] == 0 && r[3] == 0; }
-INLINE void fe_clone(fe r, const fe a) { memcpy(r, a, sizeof(fe)); }
+INLINE void fe_clone(fe r, const fe a) {
+  if (r != a) memcpy(r, a, sizeof(fe));
+}
 INLINE void fe_set64(fe r, const u64 a) {
   memset(r, 0, sizeof(fe));
   r[0] = a;
