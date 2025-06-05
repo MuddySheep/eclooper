@@ -18,6 +18,7 @@ typedef struct pe {
 static_assert(IS_LITTLE_ENDIAN, "CUDA code requires little-endian");
 static_assert(sizeof(fe)==32, "fe size");
 static_assert(sizeof(pe)==96, "pe size");
+static_assert(sizeof(void*)==8, "requires 64-bit pointers");
 
 #define INLINE __device__ __host__ inline __attribute__((always_inline))
 
@@ -183,6 +184,17 @@ __global__ void mul_kernel(pe *r,const pe *p,const fe k,u32 bits){
 
 static void ensure_const(){
   static bool init=false; if(!init){
+    int cnt=0; // why: ensure CUDA device & compatible runtime
+    cudaError_t err=cudaGetDeviceCount(&cnt);
+    if(err!=cudaSuccess || cnt==0){
+      fprintf(stderr,"CUDA: no compatible device (%s)\n",cudaGetErrorString(err));
+      assert(0);
+    }
+    int rv=0; err=cudaRuntimeGetVersion(&rv); // check runtime vs. compile time
+    if(err!=cudaSuccess || rv<CUDA_VERSION){
+      fprintf(stderr,"CUDA: driver/runtime mismatch (%d)\n",rv);
+      assert(0);
+    }
     cudaMemcpyToSymbol(d_FE_P,FE_P_HOST,sizeof(fe)); CUDA_CHECK_ERROR();
     init=true;
   }
