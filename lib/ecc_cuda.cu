@@ -8,10 +8,12 @@ typedef unsigned long long u64;
 typedef unsigned int u32;
 typedef unsigned char u8;
 typedef u64 fe[4];
-
+#ifndef PE_DEFINED
 typedef struct pe {
   fe x, y, z;
 } pe;
+#define PE_DEFINED
+#endif
 
 static_assert(IS_LITTLE_ENDIAN, "CUDA code requires little-endian");
 static_assert(sizeof(fe)==32, "fe size");

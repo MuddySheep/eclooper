@@ -554,9 +554,12 @@ void fe_modp_grpinv(fe r[], const u32 n, fe tmp[]) {
 // https://eprint.iacr.org/2015/1060.pdf
 // https://hyperelliptic.org/EFD/g1p/auto-shortw.html
 
+#ifndef PE_DEFINED
 typedef struct pe {
   fe x, y, z;
 } pe;
+#define PE_DEFINED
+#endif
 
 GLOBAL pe G1 = {
     .x = {0x59f2815b16f81798, 0x029bfcdb2dce28d9, 0x55a06295ce870b07, 0x79be667ef9dcbbac},
