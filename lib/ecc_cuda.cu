@@ -24,6 +24,11 @@ static_assert(sizeof(void*)==8, "requires 64-bit pointers");
 
 __device__ __constant__ fe d_FE_P; // prime modulus loaded at runtime
 
+#ifndef NVCC_ARCH_NUM
+#define NVCC_ARCH_NUM 52
+#endif
+static_assert(NVCC_ARCH_NUM >= 30 && NVCC_ARCH_NUM < 100, "NVCC_ARCH_NUM invalid");
+
 static const fe FE_P_HOST = {0xfffffffefffffc2fULL, 0xffffffffffffffffULL,
                              0xffffffffffffffffULL, 0xffffffffffffffffULL};
 
@@ -193,6 +198,17 @@ static void ensure_const(){
     int rv=0; err=cudaRuntimeGetVersion(&rv); // check runtime vs. compile time
     if(err!=cudaSuccess || rv<CUDA_VERSION){
       fprintf(stderr,"CUDA: driver/runtime mismatch (%d)\n",rv);
+      assert(0);
+    }
+    cudaDeviceProp prop;
+    err=cudaGetDeviceProperties(&prop,0);
+    if(err!=cudaSuccess){
+      fprintf(stderr,"CUDA: device query failed (%s)\n",cudaGetErrorString(err));
+      assert(0);
+    }
+    int sm=prop.major*10+prop.minor;
+    if(sm<NVCC_ARCH_NUM){
+      fprintf(stderr,"CUDA: GPU SM%d < build SM%d\n",sm,NVCC_ARCH_NUM);
       assert(0);
     }
     cudaMemcpyToSymbol(d_FE_P,FE_P_HOST,sizeof(fe)); CUDA_CHECK_ERROR();

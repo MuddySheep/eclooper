@@ -14,6 +14,8 @@ clean:
 	@rm -rf ecloop bench main a.out *.profraw *.profdata
 
 NVCC ?= $(CUDA_HOME)/bin/nvcc
+NVCC_ARCH ?= sm_52
+NVCC_ARCH_NUM := $(patsubst sm_%,%,$(NVCC_ARCH))
 
 build: clean $(if $(CUDA),ecc_cuda.o)
 ifeq ($(CUDA),1)
@@ -23,7 +25,7 @@ else
 endif
 
 ecc_cuda.o: lib/ecc_cuda.cu
-	$(NVCC) -std=c++17 -O3 -c $< -o $@
+	$(NVCC) -std=c++17 -O3 -arch=$(NVCC_ARCH) -DNVCC_ARCH_NUM=$(NVCC_ARCH_NUM) -c $< -o $@
 
 bench: build
 	./ecloop bench
